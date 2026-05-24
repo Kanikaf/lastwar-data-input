@@ -18,23 +18,11 @@
   .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; margin-left: 8px; vertical-align: middle; }
   .badge-blue { background: #1e3a8a30; color: #60a5fa; border: 1px solid #1e3a8a60; }
 
-  /* ---- ログイン画面 ---- */
-  #loginScreen {
-    position: fixed; inset: 0; background: var(--bg);
-    display: flex; align-items: center; justify-content: center; z-index: 999;
-  }
-  .login-box {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: 16px; padding: 40px 36px; width: 320px; text-align: center;
-  }
+  #loginScreen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 999; }
+  .login-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 40px 36px; width: 320px; text-align: center; }
   .login-box h2 { font-size: 18px; font-weight: 600; margin-bottom: 6px; color: #fff; }
   .login-box p { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
-  .login-box input {
-    width: 100%; padding: 10px 14px; background: var(--bg3);
-    border: 1px solid var(--border); border-radius: 8px;
-    color: var(--text); font-size: 15px; text-align: center;
-    letter-spacing: 4px; outline: none; margin-bottom: 14px;
-  }
+  .login-box input { width: 100%; padding: 10px 14px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 15px; text-align: center; letter-spacing: 4px; outline: none; margin-bottom: 14px; }
   .login-box input:focus { border-color: var(--accent); }
   .login-error { color: var(--danger); font-size: 12px; margin-bottom: 10px; display: none; }
 
@@ -43,6 +31,7 @@
   .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .dot-blue { background: var(--accent); } .dot-green { background: var(--accent2); }
   .dot-yellow { background: var(--warn); } .dot-purple { background: #a78bfa; }
+  .dot-red { background: var(--danger); }
 
   .upload-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 28px 20px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; position: relative; }
   .upload-zone:hover { border-color: var(--accent); background: #4f7cff08; }
@@ -76,6 +65,9 @@
   .btn-success:hover { background: #4fe6b8; transform: translateY(-1px); }
   .btn-success:disabled { background: #1a3a2a; color: #2a5a4a; cursor: not-allowed; transform: none; }
   .btn-danger { background: var(--danger); color: #fff; }
+  .btn-warn { background: var(--warn); color: #0f1117; font-size: 14px; padding: 11px 24px; font-weight: 700; }
+  .btn-warn:hover { background: #ffe080; transform: translateY(-1px); }
+  .btn-warn:disabled { background: #3a3010; color: #5a5020; cursor: not-allowed; transform: none; }
   .btn-sm { padding: 4px 10px; font-size: 11px; border-radius: 5px; }
   .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
 
@@ -97,7 +89,6 @@
   .rank-n { background: var(--bg3); color: var(--muted); border: 1px solid var(--border); }
 
   .img-list { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-  .img-thumb { position: relative; }
   .img-thumb img { width: 80px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
 
   .url-setting { display: flex; gap: 8px; align-items: center; }
@@ -105,7 +96,17 @@
   .url-status { font-size: 12px; color: var(--muted); margin-top: 6px; }
   .url-status.ok { color: var(--accent2); }
 
-  .send-result { margin-top: 14px; }
+  /* 統合実行カード */
+  .consolidate-card {
+    background: #1a2a1a;
+    border: 1px solid #2a4a2a;
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .consolidate-card .card-title { color: #a8e6b0; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 8px 0 20px; }
 
   .status-bar { position: fixed; bottom: 20px; right: 20px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 16px; font-size: 13px; display: none; align-items: center; gap: 8px; box-shadow: 0 4px 24px #00000040; z-index: 100; }
 </style>
@@ -136,7 +137,7 @@
       <input type="text" id="gasUrl" placeholder="https://script.google.com/macros/s/xxxx/exec" oninput="saveUrl()">
       <button class="btn btn-secondary btn-sm" onclick="testUrl()">接続テスト</button>
     </div>
-    <div class="url-status" id="urlStatus">※ GASウェブアプリを設置後、URLをここに入力して保存されます</div>
+    <div class="url-status" id="urlStatus">※ GASウェブアプリを設置後、URLをここに入力してください</div>
   </div>
 
   <!-- ① 設定 -->
@@ -195,8 +196,23 @@
     <button class="btn btn-success" id="sendBtn" onclick="sendToSpreadsheet()">
       📤 スプレッドシートに追加
     </button>
-    <div class="send-result" id="sendResult"></div>
+    <div id="sendResult"></div>
   </div>
+
+  <hr class="divider">
+
+  <!-- 統合実行 -->
+  <div class="consolidate-card">
+    <div class="card-title"><div class="dot dot-green"></div>📊 統合実行（consolidateAllSheets）</div>
+    <div class="alert alert-warn" style="margin-bottom: 16px;">
+      ⚠️ シート追加後にこのボタンを押すと、統合シート・BIシートが自動更新されます。
+    </div>
+    <button class="btn btn-warn" id="consolidateBtn" onclick="runConsolidate()">
+      ⚡ 統合実行
+    </button>
+    <div id="consolidateResult"></div>
+  </div>
+
 </div>
 
 <div class="status-bar" id="statusBar">
@@ -205,18 +221,13 @@
 </div>
 
 <script>
-// =====================
-// パスワード（変更する場合はここを書き換え）
 const PASSWORD = "BxD";
-// =====================
-
-const API_URL = "https://api.anthropic.com/v1/messages";
+const API_URL  = "https://api.anthropic.com/v1/messages";
 let parsedData = [];
 
 // ---- ログイン ----
 function checkPw() {
-  const val = document.getElementById('pwInput').value;
-  if (val === PASSWORD) {
+  if (document.getElementById('pwInput').value === PASSWORD) {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
     loadUrl();
@@ -226,7 +237,7 @@ function checkPw() {
   }
 }
 
-// ---- GAS URL 保存・読込 ----
+// ---- GAS URL ----
 function saveUrl() {
   const url = document.getElementById('gasUrl').value.trim();
   localStorage.setItem('gasUrl', url);
@@ -246,23 +257,20 @@ async function testUrl() {
   try {
     const res = await fetch(url + '?action=ping');
     const text = await res.text();
-    if (text.includes('pong') || res.ok) {
-      document.getElementById('urlStatus').textContent = '✅ 接続成功！';
-      document.getElementById('urlStatus').className = 'url-status ok';
-    } else {
-      document.getElementById('urlStatus').textContent = '⚠️ 応答がありましたが形式が不明です';
-    }
+    document.getElementById('urlStatus').textContent = text.includes('pong') ? '✅ 接続成功！' : '⚠️ 応答あり（形式不明）';
+    document.getElementById('urlStatus').className = 'url-status ok';
   } catch(e) {
-    document.getElementById('urlStatus').textContent = '❌ 接続できませんでした: ' + e.message;
+    document.getElementById('urlStatus').textContent = '❌ 接続できませんでした';
+    document.getElementById('urlStatus').className = 'url-status';
   }
   hideStatus();
 }
+function getGasUrl() { return document.getElementById('gasUrl').value.trim(); }
 
 // ---- シート名 ----
 const sensorEl = document.getElementById('sensorId');
-const typeEl = document.getElementById('dataType');
-const sheetPreview = document.getElementById('sheetNamePreview');
-function updateSheetName() { sheetPreview.value = sensorEl.value + typeEl.value; }
+const typeEl   = document.getElementById('dataType');
+function updateSheetName() { document.getElementById('sheetNamePreview').value = sensorEl.value + typeEl.value; }
 sensorEl.addEventListener('input', updateSheetName);
 typeEl.addEventListener('change', () => { updateSheetName(); renderTable(); });
 updateSheetName();
@@ -282,7 +290,11 @@ uz.addEventListener('drop', async e => {
 
 async function processImage(file) {
   const b64 = await toBase64(file);
-  addThumb(b64, file.type);
+  const list = document.getElementById('imgList');
+  const wrap = document.createElement('div'); wrap.className = 'img-thumb';
+  const img  = document.createElement('img'); img.src = `data:${file.type};base64,${b64}`;
+  wrap.appendChild(img); list.appendChild(wrap);
+
   showStatus('AIがデータを解析中...');
   document.getElementById('ocrStatus').innerHTML = '<div class="loading"><div class="spinner"></div>AIがランキングデータを解析中...</div>';
   try {
@@ -302,12 +314,6 @@ async function processImage(file) {
 
 function toBase64(file) {
   return new Promise(r => { const fr = new FileReader(); fr.onload = e => r(e.target.result.split(',')[1]); fr.readAsDataURL(file); });
-}
-function addThumb(b64, type) {
-  const list = document.getElementById('imgList');
-  const wrap = document.createElement('div'); wrap.className = 'img-thumb';
-  const img = document.createElement('img'); img.src = `data:${type};base64,${b64}`;
-  wrap.appendChild(img); list.appendChild(wrap);
 }
 function mergeRows(existing, newRows) {
   const map = {};
@@ -383,45 +389,51 @@ function sortByRank() { parsedData.sort((a,b)=>(Number(a['順位'])||999)-(Numbe
 // ---- スプシに送信 ----
 async function sendToSpreadsheet() {
   if (!parsedData.length) { alert('データがありません'); return; }
-  const url = document.getElementById('gasUrl').value.trim();
-  if (!url) { alert('GAS URLが設定されていません。\n上部のURL欄にウェブアプリのURLを入力してください。'); return; }
-
+  const url = getGasUrl();
+  if (!url) { alert('GAS URLが設定されていません'); return; }
   const btn = document.getElementById('sendBtn');
-  btn.disabled = true;
-  btn.textContent = '送信中...';
+  btn.disabled = true; btn.textContent = '送信中...';
   showStatus('Googleスプレッドシートに書き込み中...');
-
   const payload = {
     sheetName: sensorEl.value + typeEl.value,
     columns: getColumns(),
     rows: parsedData.map(r => getColumns().map(c => r[c] !== undefined ? r[c] : ''))
   };
-
   try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
-    });
+    const res = await fetch(url, { method: 'POST', headers: {'Content-Type':'text/plain'}, body: JSON.stringify(payload) });
     const json = await res.json();
     if (json.status === 'ok') {
       document.getElementById('sendResult').innerHTML =
-        `<div class="alert alert-success" style="margin-top:0;">
-          ✅ <strong>${payload.sheetName}</strong> シートを追加しました（${parsedData.length}件）<br>
-          <span style="font-size:12px;opacity:0.8;">次に consolidateAllSheets を実行してください。</span>
-        </div>`;
-      parsedData = [];
-      renderTable();
-    } else {
-      throw new Error(json.message || '不明なエラー');
-    }
+        `<div class="alert alert-success" style="margin-top:14px;">✅ <strong>${payload.sheetName}</strong> を追加しました（${parsedData.length}件）<br><span style="font-size:12px;opacity:0.8;">下の「⚡ 統合実行」ボタンを押してBIを更新してください。</span></div>`;
+      parsedData = []; renderTable();
+    } else { throw new Error(json.message || '不明なエラー'); }
   } catch(err) {
-    document.getElementById('sendResult').innerHTML =
-      `<div class="alert alert-danger" style="margin-top:0;">❌ エラー: ${err.message}</div>`;
+    document.getElementById('sendResult').innerHTML = `<div class="alert alert-danger" style="margin-top:14px;">❌ ${err.message}</div>`;
   }
+  btn.disabled = false; btn.textContent = '📤 スプレッドシートに追加';
+  hideStatus();
+}
 
-  btn.disabled = false;
-  btn.textContent = '📤 スプレッドシートに追加';
+// ---- 統合実行 ----
+async function runConsolidate() {
+  const url = getGasUrl();
+  if (!url) { alert('GAS URLが設定されていません'); return; }
+  const btn = document.getElementById('consolidateBtn');
+  btn.disabled = true; btn.textContent = '実行中...';
+  showStatus('統合処理中... しばらくお待ちください');
+  document.getElementById('consolidateResult').innerHTML = '<div class="loading" style="margin-top:14px;"><div class="spinner"></div>統合シート・BIシートを更新中...</div>';
+  try {
+    const res = await fetch(url, { method: 'POST', headers: {'Content-Type':'text/plain'}, body: JSON.stringify({ action: 'consolidate' }) });
+    const json = await res.json();
+    if (json.status === 'ok') {
+      document.getElementById('consolidateResult').innerHTML =
+        `<div class="alert alert-success" style="margin-top:14px;">✅ ${json.message}</div>`;
+    } else { throw new Error(json.message || '不明なエラー'); }
+  } catch(err) {
+    document.getElementById('consolidateResult').innerHTML =
+      `<div class="alert alert-danger" style="margin-top:14px;">❌ ${err.message}</div>`;
+  }
+  btn.disabled = false; btn.textContent = '⚡ 統合実行';
   hideStatus();
 }
 
