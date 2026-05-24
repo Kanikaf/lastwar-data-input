@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>戦力データ入力ツール</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f1117; --bg2: #1a1d27; --bg3: #22263a;
+    --border: #2e3350; --text: #e8eaf0; --muted: #7880a0;
+    --accent: #4f7cff; --accent2: #38d9a9; --warn: #ffd166;
+    --danger: #ff6b6b; --radius: 10px;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI','Noto Sans JP',sans-serif; min-height: 100vh; padding: 24px; }
+  h1 { font-size: 20px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+  .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; margin-left: 8px; vertical-align: middle; }
+  .badge-blue { background: #1e3a8a30; color: #60a5fa; border: 1px solid #1e3a8a60; }
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
+  .card-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; color: #c9d0e8; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-blue { background: var(--accent); } .dot-green { background: var(--accent2); } .dot-yellow { background: var(--warn); } .dot-purple { background: #a78bfa; }
+  .upload-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 28px 20px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; position: relative; }
+  .upload-zone:hover { border-color: var(--accent); background: #4f7cff08; }
+  .upload-zone.drag-over { border-color: var(--accent2); background: #38d9a908; }
+  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 32px; margin-bottom: 8px; opacity: 0.7; }
+  .upload-label { font-size: 13px; color: var(--muted); }
+  .upload-label span { color: var(--accent); }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .field { flex: 1; min-width: 120px; }
+  label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px; }
+  input[type=text], input[type=number], select { width: 100%; padding: 8px 10px; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 13px; outline: none; transition: border-color 0.2s; }
+  input[type=text]:focus, input[type=number]:focus, select:focus { border-color: var(--accent); }
+  select option { background: var(--bg3); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 7px 10px; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+  td { padding: 6px 10px; border-bottom: 1px solid #1e2235; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #ffffff06; }
+  td input { background: transparent; border: none; color: var(--text); width: 100%; outline: none; font-size: 13px; padding: 2px; }
+  td input:focus { border-bottom: 1px solid var(--accent); }
+  .btn { padding: 9px 18px; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #6b92ff; transform: translateY(-1px); }
+  .btn-secondary { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-success { background: var(--accent2); color: #0f1117; }
+  .btn-success:hover { background: #4fe6b8; transform: translateY(-1px); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-sm { padding: 4px 10px; font-size: 11px; border-radius: 5px; }
+  .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+  .alert { padding: 10px 14px; border-radius: 7px; font-size: 13px; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 8px; line-height: 1.6; }
+  .alert-info { background: #1e3a8a20; border: 1px solid #1e3a8a50; color: #93c5fd; }
+  .alert-success { background: #065f4620; border: 1px solid #065f4650; color: #6ee7b7; }
+  .alert-warn { background: #78350f20; border: 1px solid #78350f50; color: #fcd34d; }
+  .preview-img { max-width: 100%; max-height: 180px; border-radius: 7px; border: 1px solid var(--border); margin-top: 10px; object-fit: contain; display: block; }
+  .loading { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; margin-top: 10px; }
+  .spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .rank-badge { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-size: 11px; font-weight: 700; }
+  .rank-1 { background: #ffd16620; color: var(--warn); border: 1px solid var(--warn); }
+  .rank-2 { background: #94a3b820; color: #94a3b8; border: 1px solid #94a3b840; }
+  .rank-3 { background: #cd7c3220; color: #cd7c32; border: 1px solid #cd7c3240; }
+  .rank-n { background: var(--bg3); color: var(--muted); border: 1px solid var(--border); }
+  .gas-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-top: 14px; position: relative; }
+  .gas-box pre { font-family: 'Consolas','Courier New',monospace; font-size: 11.5px; color: #a8e6cf; white-space: pre-wrap; word-break: break-all; line-height: 1.7; max-height: 320px; overflow-y: auto; }
+  .copy-btn { position: absolute; top: 10px; right: 10px; background: var(--accent); color: #fff; border: none; border-radius: 5px; padding: 4px 12px; font-size: 11px; cursor: pointer; }
+  .copy-btn:hover { background: #6b92ff; }
+  .step-flow { display: flex; gap: 6px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+  .step-pill { background: var(--bg3); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--muted); }
+  .step-pill.active { background: #4f7cff20; border-color: var(--accent); color: var(--accent); }
+  .step-arr { color: var(--border); font-size: 12px; }
+  .img-list { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .img-thumb { position: relative; }
+  .img-thumb img { width: 80px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
+  .img-thumb .del { position: absolute; top: -4px; right: -4px; background: var(--danger); color: #fff; border: none; border-radius: 50%; width: 16px; height: 16px; font-size: 9px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .status-bar { position: fixed; bottom: 20px; right: 20px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 16px; font-size: 13px; display: none; align-items: center; gap: 8px; box-shadow: 0 4px 24px #00000040; z-index: 100; }
+</style>
+</head>
+<body>
+
+<h1>⚔️ 戦力データ入力ツール <span class="badge badge-blue">Googleスプシ対応</span></h1>
+<p class="subtitle">スクショをAI解析 → データ確認 → GASコードを生成 → スプシに貼るだけ</p>
+
+<div class="step-flow">
+  <div class="step-pill active">① 戦域・種別設定</div>
+  <div class="step-arr">→</div>
+  <div class="step-pill active">② スクショAI解析</div>
+  <div class="step-arr">→</div>
+  <div class="step-pill active">③ データ確認・編集</div>
+  <div class="step-arr">→</div>
+  <div class="step-pill active">④ GASコード生成 → スプシへ貼付け</div>
+</div>
+
+<!-- ① 設定 -->
+<div class="card">
+  <div class="card-title"><div class="dot dot-blue"></div>① 基本設定</div>
+  <div class="row">
+    <div class="field">
+      <label>戦域番号</label>
+      <input type="number" id="sensorId" placeholder="例: 720" value="720">
+    </div>
+    <div class="field">
+      <label>データ種別</label>
+      <select id="dataType">
+        <option value="最強英雄戦力">最強英雄戦力</option>
+        <option value="英雄総戦力">英雄総戦力</option>
+        <option value="連盟撃破数">連盟撃破数</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>生成されるシート名</label>
+      <input type="text" id="sheetNamePreview" readonly style="color: var(--accent2); font-weight: 600;">
+    </div>
+  </div>
+</div>
+
+<!-- ② スクショ読込 -->
+<div class="card">
+  <div class="card-title"><div class="dot dot-green"></div>② スクリーンショット読み込み（AI解析）</div>
+  <div class="alert alert-info">📌 ランキング画面のスクショを1枚以上アップロード。ページをまたぐ場合は複数枚まとめてOK。</div>
+  <div class="upload-zone" id="uploadZone">
+    <input type="file" id="screenshotInput" accept="image/*" multiple>
+    <div class="upload-icon">🖼️</div>
+    <div class="upload-label">クリックまたはドラッグ＆ドロップ<br><span>PNG / JPG 対応・複数枚可</span></div>
+  </div>
+  <div class="img-list" id="imgList"></div>
+  <div id="ocrStatus"></div>
+</div>
+
+<!-- ③ データ確認 -->
+<div class="card">
+  <div class="card-title"><div class="dot dot-yellow"></div>③ データ確認・編集</div>
+  <div id="dataTypeInfo" class="alert alert-info">スクショを読み込むとここにデータが表示されます</div>
+  <div id="tableArea">
+    <div style="color: var(--muted); font-size: 13px; text-align: center; padding: 20px;">データなし — スクショを読み込んでください</div>
+  </div>
+  <div class="btn-group">
+    <button class="btn btn-secondary btn-sm" onclick="addRow()">＋ 行を追加</button>
+    <button class="btn btn-secondary btn-sm" onclick="clearData()">🗑 クリア</button>
+    <button class="btn btn-secondary btn-sm" onclick="sortByRank()">↕ 順位順に並べ替え</button>
+  </div>
+</div>
+
+<!-- ④ GASコード生成 -->
+<div class="card">
+  <div class="card-title"><div class="dot dot-purple"></div>④ GASコードを生成 → Googleスプシに貼付け</div>
+  <div class="alert alert-warn">
+    ⚠️ スプレッドシートを開いて「拡張機能 → Apps Script」を開き、下のコードを貼り付けて実行してください。<br>
+    既存シートがある場合は上書き確認あり。実行後 consolidateAllSheets を実行してBIを更新してください。
+  </div>
+  <button class="btn btn-success" onclick="generateGAS()" style="margin-bottom: 14px;">⚡ GASコードを生成</button>
+  <div id="gasOutput"></div>
+</div>
+
+<div class="status-bar" id="statusBar">
+  <div class="spinner"></div>
+  <span id="statusMsg">処理中...</span>
+</div>
+
+<script>
+const API_URL = "https://api.anthropic.com/v1/messages";
+let parsedData = [];
+
+const sensorEl = document.getElementById('sensorId');
+const typeEl = document.getElementById('dataType');
+const sheetPreview = document.getElementById('sheetNamePreview');
+
+function updateSheetName() { sheetPreview.value = sensorEl.value + typeEl.value; }
+sensorEl.addEventListener('input', updateSheetName);
+typeEl.addEventListener('change', () => { updateSheetName(); renderTable(); });
+updateSheetName();
+
+// ---- 画像アップロード ----
+document.getElementById('screenshotInput').addEventListener('change', async (e) => {
+  for (const f of Array.from(e.target.files)) await processImage(f);
+  e.target.value = '';
+});
+const uz = document.getElementById('uploadZone');
+uz.addEventListener('dragover', e => { e.preventDefault(); uz.classList.add('drag-over'); });
+uz.addEventListener('dragleave', () => uz.classList.remove('drag-over'));
+uz.addEventListener('drop', async e => {
+  e.preventDefault(); uz.classList.remove('drag-over');
+  for (const f of Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'))) await processImage(f);
+});
+
+async function processImage(file) {
+  const b64 = await toBase64(file);
+  addThumb(b64, file.type);
+  showStatus('AIがデータを解析中...');
+  document.getElementById('ocrStatus').innerHTML = '<div class="loading"><div class="spinner"></div>AIがランキングデータを解析中...</div>';
+  try {
+    const rows = await callClaude(b64, file.type || 'image/png');
+    if (rows && rows.length) {
+      parsedData = mergeRows(parsedData, rows);
+      renderTable();
+      document.getElementById('ocrStatus').innerHTML = `<div class="alert alert-success">✅ ${rows.length}件を抽出（累計: ${parsedData.length}件）</div>`;
+    } else {
+      document.getElementById('ocrStatus').innerHTML = '<div class="alert alert-warn">⚠️ 自動抽出できませんでした。手動で入力してください。</div>';
+    }
+  } catch(err) {
+    document.getElementById('ocrStatus').innerHTML = `<div class="alert" style="background:#78350f20;border:1px solid #78350f50;color:#fcd34d;">❌ ${err.message}</div>`;
+  }
+  hideStatus();
+}
+
+function toBase64(file) {
+  return new Promise(r => { const fr = new FileReader(); fr.onload = e => r(e.target.result.split(',')[1]); fr.readAsDataURL(file); });
+}
+
+function addThumb(b64, type) {
+  const list = document.getElementById('imgList');
+  const wrap = document.createElement('div'); wrap.className = 'img-thumb';
+  const img = document.createElement('img'); img.src = `data:${type};base64,${b64}`;
+  wrap.appendChild(img); list.appendChild(wrap);
+}
+
+function mergeRows(existing, newRows) {
+  // 重複（同順位）があれば上書き、なければ追加
+  const map = {};
+  existing.forEach(r => { if (r['順位']) map[r['順位']] = r; });
+  newRows.forEach(r => { if (r['順位']) map[r['順位']] = r; else existing.push(r); });
+  return Object.values(map).sort((a,b) => (Number(a['順位'])||999)-(Number(b['順位'])||999));
+}
+
+// ---- Claude Vision API ----
+async function callClaude(b64, mediaType) {
+  const dtype = typeEl.value, sensor = sensorEl.value;
+  let prompt = '';
+  if (dtype === '最強英雄戦力') {
+    prompt = `ラストウォー最強英雄戦力ランキングのスクリーンショットです（戦域#${sensor}）。
+全データをJSONの配列で返してください（コードブロック・説明不要）:
+[{"順位":1,"連盟":"ABC","指揮官名":"名前","主要英雄":"英雄名","戦力":18901048,"戦域":"#${sensor}"}]
+・戦力は整数（M表示なら×1000000）・連盟タグは[]なし`;
+  } else if (dtype === '英雄総戦力') {
+    prompt = `ラストウォー英雄総戦力ランキングのスクリーンショットです（戦域#${sensor}）。
+全データをJSONの配列で返してください（コードブロック・説明不要）:
+[{"順位":1,"連盟":"ABC","指揮官名":"名前","戦力":504317534}]
+・戦力は整数（M表示なら×1000000）`;
+  } else {
+    prompt = `ラストウォー連盟撃破数ランキングのスクリーンショットです（戦域#${sensor}）。
+全データをJSONの配列で返してください（コードブロック・説明不要）:
+[{"順位":1,"タグ":"[ABC]","連盟名称":"Alliance Name","戦域":"#${sensor}","撃破数":2242126650}]
+・撃破数は整数・タグは[]込み`;
+  }
+
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+      messages: [{role:'user', content:[
+        {type:'image', source:{type:'base64', media_type: mediaType, data: b64}},
+        {type:'text', text: prompt}
+      ]}]
+    })
+  });
+  if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || 'API Error'); }
+  const data = await res.json();
+  const text = data.content.map(c => c.text||'').join('');
+  const clean = text.replace(/```json|```/g,'').trim();
+  try { return JSON.parse(clean); }
+  catch { const m = clean.match(/\[[\s\S]*\]/); if (m) return JSON.parse(m[0]); return []; }
+}
+
+// ---- テーブル表示 ----
+function getColumns() {
+  const t = typeEl.value;
+  if (t === '最強英雄戦力') return ['順位','連盟','指揮官名','主要英雄','戦力','戦域'];
+  if (t === '英雄総戦力')   return ['順位','連盟','指揮官名','戦力'];
+  return ['順位','タグ','連盟名称','戦域','撃破数'];
+}
+
+function renderTable() {
+  const area = document.getElementById('tableArea');
+  const cols = getColumns();
+  if (!parsedData.length) {
+    area.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">データなし</div>';
+    return;
+  }
+  let html = '<div style="overflow-x:auto;"><table><thead><tr><th style="width:28px;">#</th>';
+  cols.forEach(c => html += `<th>${c}</th>`);
+  html += '<th style="width:40px;"></th></tr></thead><tbody>';
+  parsedData.forEach((row, i) => {
+    const rank = Number(row['順位']) || i+1;
+    const rc = rank===1?'rank-1':rank===2?'rank-2':rank===3?'rank-3':'rank-n';
+    html += `<tr><td><span class="rank-badge ${rc}">${rank}</span></td>`;
+    cols.forEach(c => {
+      const v = row[c] !== undefined ? String(row[c]).replace(/"/g,'&quot;') : '';
+      html += `<td><input type="text" value="${v}" onchange="updateCell(${i},'${c}',this.value)"></td>`;
+    });
+    html += `<td><button class="btn btn-danger btn-sm" onclick="removeRow(${i})">✕</button></td></tr>`;
+  });
+  html += '</tbody></table></div>';
+  area.innerHTML = html;
+  document.getElementById('dataTypeInfo').innerHTML = `✅ ${typeEl.value} — 戦域 #${sensorEl.value} — ${parsedData.length}件`;
+  document.getElementById('dataTypeInfo').className = 'alert alert-success';
+}
+
+function updateCell(i, col, val) { parsedData[i][col] = isNaN(val)||val==='' ? val : Number(val); }
+function removeRow(i) { parsedData.splice(i,1); renderTable(); }
+function addRow() {
+  const empty = {}; getColumns().forEach(c => empty[c]=''); empty['順位'] = parsedData.length+1;
+  parsedData.push(empty); renderTable();
+}
+function clearData() { if(confirm('データをクリアしますか？')) { parsedData=[]; renderTable(); } }
+function sortByRank() {
+  parsedData.sort((a,b)=>(Number(a['順位'])||999)-(Number(b['順位'])||999)); renderTable();
+}
+
+// ---- GASコード生成 ----
+function generateGAS() {
+  if (!parsedData.length) { alert('データがありません。先にスクショを読み込んでください。'); return; }
+  const cols = getColumns();
+  const sheetName = sensorEl.value + typeEl.value;
+
+  // データをGAS埋め込み用の2D配列に変換
+  const header = JSON.stringify(cols);
+  const rowsArr = parsedData.map(r => cols.map(c => r[c] !== undefined ? r[c] : ''));
+  const rowsJson = JSON.stringify(rowsArr);
+
+  const gas = `// =============================================
+// 生成日時: ${new Date().toLocaleString('ja-JP')}
+// シート名: ${sheetName}  件数: ${parsedData.length}件
+// =============================================
+function addSheet_${sheetName.replace(/[^a-zA-Z0-9]/g,'_')}() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetName = "${sheetName}";
+  
+  // 既存シートの確認
+  let sheet = ss.getSheetByName(sheetName);
+  if (sheet) {
+    const ui = SpreadsheetApp.getUi();
+    const res = ui.alert(
+      'シートが既に存在します',
+      sheetName + ' はすでに存在します。上書きしますか？',
+      ui.ButtonSet.YES_NO
+    );
+    if (res !== ui.Button.YES) return;
+    ss.deleteSheet(sheet);
+  }
+  
+  // 新規シート作成（最後に追加）
+  sheet = ss.insertSheet(sheetName);
+  
+  // ヘッダー
+  const header = ${header};
+  sheet.getRange(1, 1, 1, header.length).setValues([header]);
+  
+  // ヘッダー書式
+  const headerRange = sheet.getRange(1, 1, 1, header.length);
+  headerRange.setFontWeight('bold');
+  headerRange.setBackground('#263238');
+  headerRange.setFontColor('#80CBC4');
+  
+  // データ
+  const rows = ${rowsJson};
+  if (rows.length > 0) {
+    sheet.getRange(2, 1, rows.length, header.length).setValues(rows);
+  }
+  
+  // 列幅自動調整
+  for (let i = 1; i <= header.length; i++) {
+    sheet.autoResizeColumn(i);
+  }
+  
+  SpreadsheetApp.flush();
+  SpreadsheetApp.getUi().alert('✅ 完了！\\n\\nシート「' + sheetName + '」を追加しました（' + rows.length + '件）\\n\\n次に consolidateAllSheets を実行してください。');
+}`;
+
+  const out = document.getElementById('gasOutput');
+  out.innerHTML = `
+    <div class="alert alert-info" style="margin-bottom:10px;">
+      📋 下のコードをコピーして、Googleスプレッドシートの<br>
+      「拡張機能 → Apps Script」に貼り付け → <code style="background:#ffffff15;padding:2px 6px;border-radius:4px;">addSheet_${sheetName.replace(/[^a-zA-Z0-9]/g,'_')}</code> を実行
+    </div>
+    <div class="gas-box">
+      <button class="copy-btn" onclick="copyGAS(this)">📋 コピー</button>
+      <pre id="gasCode">${escapeHtml(gas)}</pre>
+    </div>
+    <div class="alert alert-warn" style="margin-top:12px;">
+      ⚠️ consolidateAllSheets も実行するのをお忘れなく。統合シート・BIシートが自動更新されます。
+    </div>
+  `;
+}
+
+function copyGAS(btn) {
+  const code = document.getElementById('gasCode').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = '✅ コピー済み';
+    setTimeout(() => btn.textContent = '📋 コピー', 2000);
+  });
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function showStatus(msg) {
+  document.getElementById('statusMsg').textContent = msg;
+  document.getElementById('statusBar').style.display = 'flex';
+}
+function hideStatus() { document.getElementById('statusBar').style.display = 'none'; }
+</script>
+</body>
+</html>
